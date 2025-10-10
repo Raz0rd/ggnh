@@ -30,18 +30,31 @@ export async function GET(
     const url = `${apiBase}?cpf=${cpfLimpo}`;
 
     console.log('🔍 Consultando CPF:', cpfLimpo);
+    console.log('🌐 URL:', url);
 
-    // Fazer requisição para a API com headers apropriados
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Referer': 'https://cpf.projeto7sms.com/',
-        'Origin': 'https://cpf.projeto7sms.com',
-      },
-      cache: 'no-store',
-    });
+    // Tentar múltiplas estratégias
+    let response;
+    
+    try {
+      // Estratégia 1: Requisição direta com headers simulando navegador
+      response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json, text/plain, */*',
+          'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Referer': 'https://cpf.projeto7sms.com/',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        },
+        cache: 'no-store',
+      });
+      
+      console.log('📊 Status da resposta:', response.status);
+    } catch (fetchError) {
+      console.error('❌ Erro no fetch:', fetchError);
+      throw fetchError;
+    }
 
     if (!response.ok) {
       console.error('❌ Erro na API:', response.status, response.statusText);
