@@ -31,12 +31,16 @@ export async function GET(
 
     console.log('🔍 Consultando CPF:', cpfLimpo);
 
-    // Fazer requisição para a API
+    // Fazer requisição para a API com headers apropriados
     const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Referer': 'https://cpf.projeto7sms.com/',
+        'Origin': 'https://cpf.projeto7sms.com',
       },
+      cache: 'no-store',
     });
 
     if (!response.ok) {
