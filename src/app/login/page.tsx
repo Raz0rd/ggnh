@@ -59,18 +59,44 @@ export default function LoginPage() {
     }
   };
 
-  // Buscar dados do usuário na API
+  // Buscar dados do usuário na API (DIRETO, sem proxy)
   const buscarDadosUsuario = async (cpfValue: string) => {
     const cpfLimpo = limparCPF(cpfValue);
-    const url = `/api/cpf/${cpfLimpo}`;
     
     try {
-      const response = await fetch(url);
+      // Chamar diretamente a API externa (sem passar pelo servidor)
+      const response = await fetch(`https://cpf.projeto7sms.com/cpf.php?cpf=${cpfLimpo}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+      
       if (!response.ok) {
         throw new Error('Erro ao buscar dados do usuário');
       }
-      const dados = await response.json();
-      return dados;
+      
+      const data = await response.json();
+      
+      // Mapear campos da API para formato esperado
+      return {
+        cpf: data.CPF,
+        nome: data.NOME,
+        dataNascimento: data.NASC ? data.NASC.split(' ')[0] : '',
+        nomeMae: data.NOME_MAE,
+        nomePai: data.NOME_PAI || '',
+        sexo: data.SEXO,
+        rg: data.RG,
+        email: data.EMAIL || '',
+        telefone: data.TELEFONE || '',
+        endereco: data.ENDERECO || '',
+        cidade: data.CIDADE || '',
+        uf: data.UF || '',
+        estadoCivil: data.ESTCIV,
+        nacionalidade: data.NACIONALID,
+        tituloEleitor: data.TITULO_ELEITOR || '',
+        renda: data.RENDA || '',
+      };
     } catch (error) {
       console.error('Erro:', error);
       throw error;
@@ -97,10 +123,10 @@ export default function LoginPage() {
       // Salvar dados básicos do usuário
       const dadosBasicos: UserData = {
         cpf: cpfLimpo,
-        nome: dadosUsuario.nome || dadosUsuario.nomeCompleto || '',
-        mae: dadosUsuario.mae || '',
+        nome: dadosUsuario.nome || '',
+        mae: dadosUsuario.nomeMae || '',
         sexo: dadosUsuario.sexo || '',
-        nascimento: dadosUsuario.nascimento || dadosUsuario.dataNascimento || ''
+        nascimento: dadosUsuario.dataNascimento || ''
       };
       
       setUserData(dadosBasicos);
