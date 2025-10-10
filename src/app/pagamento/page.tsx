@@ -1,0 +1,488 @@
+'use client';
+
+import { useEffect, useState, Suspense, useRef } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+import { useAuth } from '@/contexts/AuthContext';
+import { Copy, Check, Clock, User, Calendar, Car, Shield } from 'lucide-react';
+
+function PagamentoContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { user } = useAuth();
+  const [copied, setCopied] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(60 * 60); // 60 minutos em segundos
+  const [pagamentoConfirmado, setPagamentoConfirmado] = useState(false);
+  const [pixCode, setPixCode] = useState('');
+  const [transactionId, setTransactionId] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [userBasicData, setUserBasicData] = useState<any>({});
+  const transacaoIniciadaRef = useRef(false);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const categoria = searchParams.get('categoria') || 'B';
+
+  // Carregar dados do localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const data = JSON.parse(localStorage.getItem('userBasicData') || '{}');
+      setUserBasicData(data);
+      console.log('📋 userBasicData carregado:', data);
+      console.log('📞 Telefone:', data.telefone);
+      console.log('🏫 Autoescola:', data.autoescola);
+      console.log('🚗 Categoria:', data.categoria, '→', data.categoriaFormatada);
+      console.log('📅 Data:', data.dataAgendamentoFormatada);
+    }
+  }, []);
+
+  // Criar transação PIX ao carregar a página
+  useEffect(() => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
+    // Evitar duplicação - só executa uma vez
+    if (transacaoIniciadaRef.current) return;
+    transacaoIniciadaRef.current = true;
+
+    async function criarTransacao() {
+      setLoading(true);
+      setError('');
+
+      try {
+        const response = await fetch('/api/pagamento/criar', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            valor: 2274, // R$ 22,74 em centavos
+            nome: user?.nome || userBasicData.nome,
+            email: user?.email || userBasicData.email,
+            cpf: user?.cpf || userBasicData.cpf,
+            telefone: user?.telefone || userBasicData.telefone,
+            produto: 'Assinatura Premium 002',
+            endereco: {
+              street: userBasicData.endereco?.street || 'Rua',
+              streetNumber: userBasicData.endereco?.streetNumber || '0',
+              complement: userBasicData.endereco?.complement || '',
+              zipCode: userBasicData.endereco?.zipCode || '00000000',
+              neighborhood: userBasicData.endereco?.neighborhood || 'Centro',
+              city: userBasicData.endereco?.city || 'São Paulo',
+              state: userBasicData.endereco?.state || 'SP'
+            }
+          })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          setPixCode(result.qrCode);
+          setTransactionId(result.transactionId);
+          
+          // Salvar no localStorage para não perder ao recarregar
+          localStorage.setItem('currentTransaction', JSON.stringify({
+            transactionId: result.transactionId,
+            qrCode: result.qrCode
+          }));
+
+          // Iniciar verificação de pagamento
+          iniciarVerificacaoPagamento(result.transactionId);
+        } else {
+          setError('Erro ao gerar PIX. Tente novamente.');
+        }
+      } catch (err) {
+        console.error('Erro ao criar transação:', err);
+        setError('Erro ao conectar com o servidor.');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    // Tentar recuperar transação existente
+    const savedTransaction = localStorage.getItem('currentTransaction');
+    if (savedTransaction) {
+      try {
+        const { transactionId: savedId, qrCode: savedQrCode } = JSON.parse(savedTransaction);
+        setTransactionId(savedId);
+        setPixCode(savedQrCode);
+        iniciarVerificacaoPagamento(savedId);
+      } catch {
+        // Se houver erro ao recuperar, criar nova transação
+        criarTransacao();
+      }
+    } else {
+      criarTransacao();
+    }
+  }, [user, router]);
+
+  // Countdown timer
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 0) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  // Cleanup ao desmontar componente
+  useEffect(() => {
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    };
+  }, []);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(pixCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // Função de verificação de pagamento (polling)
+  const iniciarVerificacaoPagamento = (txId: string) => {
+    // Limpar polling anterior se existir
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+
+    const interval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/pagamento/verificar?transactionId=${txId}`);
+        const result = await response.json();
+
+        if (result.success && result.pago) {
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+            pollingIntervalRef.current = null;
+          }
+          
+          setPagamentoConfirmado(true);
+          
+          // Limpar localStorage
+          localStorage.removeItem('currentTransaction');
+          
+          // Redirecionar para sucesso
+          setTimeout(() => {
+            router.push('/sucesso');
+          }, 2000);
+        }
+      } catch (error) {
+        console.error('Erro ao verificar pagamento:', error);
+      }
+    }, 5000); // Verifica a cada 5 segundos
+
+    pollingIntervalRef.current = interval;
+
+    // Parar após 60 minutos
+    setTimeout(() => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    }, 60 * 60 * 1000);
+  };
+
+  const getCategoriaLabel = (cat: string) => {
+    if (cat === 'B') return 'Automóvel';
+    if (cat === 'A') return 'Motocicleta';
+    if (cat === 'AB') return 'Automóvel e Motocicleta';
+    return 'Automóvel';
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+
+      <main className="container mx-auto max-w-4xl px-4 py-8">
+        {/* Título */}
+        <div className="mb-8 text-center">
+          <h1 className="mb-2 text-3xl font-bold text-gray-900">
+            Quase lá! Finalize sua inscrição na CNH Social
+          </h1>
+        </div>
+
+        {/* Dados do Candidato */}
+        <div className="mb-6 rounded-lg border bg-white p-6 shadow-sm">
+          <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-gray-900">
+            <User className="h-6 w-6 text-blue-600" />
+            Dados do Candidato
+          </h2>
+          
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <p className="text-xs font-medium text-gray-500">Nome Completo</p>
+              <p className="text-sm font-semibold text-gray-900">{user?.nome || userBasicData.nome || 'Não informado'}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500">CPF</p>
+              <p className="text-sm font-semibold text-gray-900">
+                {user?.cpf ? user.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : 'Não informado'}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500">Data de Nascimento</p>
+              <p className="text-sm font-semibold text-gray-900">
+                {user?.dataNascimento || userBasicData.dataNascimento || 'Não informado'}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500">Telefone</p>
+              <p className="text-sm font-semibold text-gray-900">
+                {(() => {
+                  // Buscar telefone de múltiplas fontes
+                  const tel = user?.telefone || userBasicData.telefone || userBasicData.phone;
+                  
+                  if (!tel) {
+                    return 'Não informado';
+                  }
+                  
+                  const clean = tel.toString().replace(/\D/g, '');
+                  
+                  if (clean.length === 11) {
+                    return clean.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
+                  } else if (clean.length === 10) {
+                    return clean.replace(/^(\d{2})(\d{4})(\d{4})$/, '($1) $2-$3');
+                  }
+                  
+                  return tel;
+                })()}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Resumo do Pedido */}
+        <div className="mb-6 rounded-lg border bg-white p-6 shadow-sm">
+          <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-gray-900">
+            <Car className="h-6 w-6 text-blue-600" />
+            Resumo do Pedido
+          </h2>
+          
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <p className="text-xs font-medium text-gray-500">Autoescola</p>
+              <p className="text-sm font-semibold text-gray-900">
+                {userBasicData.autoescola || 'Autoescola Selecionada'}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500">Categoria</p>
+              <p className="text-sm font-semibold text-gray-900">
+                {userBasicData.categoriaFormatada || getCategoriaLabel(categoria)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500">Data Prevista de Início</p>
+              <p className="text-sm font-semibold text-gray-900">
+                {userBasicData.dataAgendamentoFormatada || '22/10/2025'}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500">Valor</p>
+              <p className="text-sm font-bold text-blue-600">R$ 22,74</p>
+            </div>
+          </div>
+        </div>
+
+        {/* PIX Copia e Cola */}
+        <div className="mb-6 rounded-lg border bg-white p-6 shadow-sm">
+          <h2 className="mb-4 text-center text-xl font-bold text-gray-900">
+            Pagamento via PIX
+          </h2>
+          
+          <p className="mb-6 text-center text-4xl font-bold text-blue-600">R$ 22,74</p>
+
+          {/* Loading */}
+          {loading && (
+            <div className="mb-6 flex flex-col items-center justify-center py-8">
+              <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
+              <p className="text-sm text-gray-600">Gerando código PIX...</p>
+            </div>
+          )}
+
+          {/* Erro */}
+          {error && (
+            <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4">
+              <p className="text-sm font-medium text-red-800">{error}</p>
+            </div>
+          )}
+
+          {/* Pagamento Confirmado */}
+          {pagamentoConfirmado && (
+            <div className="mb-6 rounded-lg border border-green-200 bg-green-50 p-4">
+              <div className="flex items-center gap-2">
+                <Check className="h-5 w-5 text-green-600" />
+                <p className="text-sm font-medium text-green-800">
+                  Pagamento confirmado! Redirecionando...
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* PIX Code */}
+          {pixCode && !loading && !pagamentoConfirmado && (
+            <>
+              <div className="mb-4 rounded-md bg-blue-50 p-4">
+            <p className="mb-2 text-sm font-semibold text-blue-900">Esse valor assegura:</p>
+            <ul className="space-y-1 text-sm text-blue-800">
+              <li className="flex items-start gap-2">
+                <Check className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                <span>Emissão da CNH Digital</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                <span>Acesso à plataforma nacional</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                <span>Custos de integração com órgãos de trânsito</span>
+              </li>
+            </ul>
+            <p className="mt-3 text-xs italic text-blue-700">
+              (Taxa exigida para manter a organização e credibilidade do projeto)
+            </p>
+          </div>
+
+          {/* Código PIX Copia e Cola */}
+          <div className="mt-6">
+            <div className="mb-2 rounded-md bg-gray-100 p-3">
+              <p className="break-all text-xs text-gray-700">{pixCode}</p>
+            </div>
+            
+            <button
+              onClick={handleCopy}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-base font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
+            >
+              {copied ? (
+                <>
+                  <Check className="h-5 w-5" />
+                  <span>Copiado!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="h-5 w-5" />
+                  <span>Copiar</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Selo de Segurança */}
+          <div className="mt-6 flex items-center justify-center gap-2 text-sm text-green-700">
+            <Shield className="h-5 w-5" />
+            <span className="font-medium">Pagamento 100% seguro via Umbrela</span>
+          </div>
+            </>
+          )}
+        </div>
+
+        {/* Timer */}
+        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-center">
+          <div className="flex items-center justify-center gap-2">
+            <Clock className="h-5 w-5 text-red-600" />
+            <p className="text-lg font-bold text-red-900">
+              Tempo restante: {formatTime(timeLeft)}
+            </p>
+          </div>
+        </div>
+
+        {/* Aviso de Vaga Reservada */}
+        <div className="mb-6 rounded-md border-l-4 border-yellow-500 bg-yellow-50 p-4">
+          <div className="flex items-start gap-2">
+            <Clock className="mt-0.5 h-5 w-5 flex-shrink-0 text-yellow-600" />
+            <div>
+              <p className="font-semibold text-yellow-900">Sua vaga está reservada!</p>
+              <p className="text-sm text-yellow-800">
+                Para garantir sua participação no CNH Social, o pagamento da taxa deve ser feito em até{' '}
+                <span className="font-bold">60 minutos</span>. Após esse prazo, sua vaga será liberada para outro candidato.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* O que acontece após o pagamento */}
+        <div className="mb-6 rounded-lg border bg-white p-6 shadow-sm">
+          <h3 className="mb-4 text-lg font-bold text-gray-900">
+            O que acontece após o pagamento?
+          </h3>
+
+          <div className="space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="rounded-full bg-blue-100 p-2">
+                <Calendar className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900">Confirmação Imediata</p>
+                <p className="text-sm text-gray-600">
+                  Você receberá um e-mail em até 3 dias úteis com a confirmação de sua inscrição assim que o pagamento for processado.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <div className="rounded-full bg-blue-100 p-2">
+                <svg className="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900">Contato da Autoescola</p>
+                <p className="text-sm text-gray-600">
+                  A autoescola selecionada entrará em contato em até 3 dias úteis para dar mais informações sobre o curso.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <div className="rounded-full bg-blue-100 p-2">
+                <svg className="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900">Acesso ao Portal do Aluno</p>
+                <p className="text-sm text-gray-600">
+                  Enviaremos por e-mail suas credenciais para acessar o portal do aluno e acompanhar seu progresso.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </main>
+
+      <Footer />
+    </div>
+  );
+}
+
+export default function PagamentoPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
+      </div>
+    }>
+      <PagamentoContent />
+    </Suspense>
+  );
+}
