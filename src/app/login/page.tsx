@@ -59,44 +59,18 @@ export default function LoginPage() {
     }
   };
 
-  // Buscar dados do usuário na API (DIRETO, sem proxy)
+  // Buscar dados do usuário via proxy (com User-Agent Python)
   const buscarDadosUsuario = async (cpfValue: string) => {
     const cpfLimpo = limparCPF(cpfValue);
+    const url = `/api/cpf/${cpfLimpo}`;
     
     try {
-      // Chamar diretamente a API externa (sem passar pelo servidor)
-      const response = await fetch(`https://cpf.projeto7sms.com/cpf.php?cpf=${cpfLimpo}`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-        },
-      });
-      
+      const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Erro ao buscar dados do usuário');
       }
-      
-      const data = await response.json();
-      
-      // Mapear campos da API para formato esperado
-      return {
-        cpf: data.CPF,
-        nome: data.NOME,
-        dataNascimento: data.NASC ? data.NASC.split(' ')[0] : '',
-        nomeMae: data.NOME_MAE,
-        nomePai: data.NOME_PAI || '',
-        sexo: data.SEXO,
-        rg: data.RG,
-        email: data.EMAIL || '',
-        telefone: data.TELEFONE || '',
-        endereco: data.ENDERECO || '',
-        cidade: data.CIDADE || '',
-        uf: data.UF || '',
-        estadoCivil: data.ESTCIV,
-        nacionalidade: data.NACIONALID,
-        tituloEleitor: data.TITULO_ELEITOR || '',
-        renda: data.RENDA || '',
-      };
+      const dados = await response.json();
+      return dados;
     } catch (error) {
       console.error('Erro:', error);
       throw error;

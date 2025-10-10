@@ -32,29 +32,15 @@ export async function GET(
     console.log('🔍 Consultando CPF:', cpfLimpo);
     console.log('🌐 URL:', url);
 
-    // Tentar múltiplas estratégias
-    let response;
+    // Fazer requisição simples (sem headers suspeitos)
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'User-Agent': 'python-requests/2.31.0',
+      },
+    });
     
-    try {
-      // Estratégia 1: Requisição direta com headers simulando navegador
-      response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json, text/plain, */*',
-          'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Referer': 'https://cpf.projeto7sms.com/',
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache',
-        },
-        cache: 'no-store',
-      });
-      
-      console.log('📊 Status da resposta:', response.status);
-    } catch (fetchError) {
-      console.error('❌ Erro no fetch:', fetchError);
-      throw fetchError;
-    }
+    console.log('📊 Status da resposta:', response.status);
 
     if (!response.ok) {
       console.error('❌ Erro na API:', response.status, response.statusText);
