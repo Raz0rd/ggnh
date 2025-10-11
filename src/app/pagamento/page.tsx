@@ -235,7 +235,7 @@ function PagamentoContent() {
             <div>
               <p className="text-xs font-medium text-gray-500">CPF</p>
               <p className="text-sm font-semibold text-gray-900">
-                {(userBasicData.cpf || user?.cpf) ? (userBasicData.cpf || user.cpf).replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : 'Não informado'}
+                {(userBasicData.cpf || user?.cpf) ? (userBasicData.cpf || user?.cpf)?.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : 'Não informado'}
               </p>
             </div>
             <div>
