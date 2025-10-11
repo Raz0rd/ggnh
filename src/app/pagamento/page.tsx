@@ -31,6 +31,7 @@ function PagamentoContent() {
       setUserBasicData(data);
       console.log('📋 userBasicData carregado:', data);
       console.log('📞 Telefone:', data.telefone);
+      console.log('📮 CEP:', data.cep);
       console.log('🏫 Autoescola:', data.autoescola);
       console.log('🚗 Categoria:', data.categoria, '→', data.categoriaFormatada);
       console.log('📅 Data:', data.dataAgendamentoFormatada);

@@ -46,6 +46,10 @@ export async function POST(request: NextRequest) {
     // Se não tiver telefone, gerar baseado no CPF para ser único
     const telefoneValido = telefoneClean.length >= 10 ? telefoneClean : `11${cpfLimpo.substring(0, 9)}`;
 
+    // Log para debug
+    console.log('📦 Payload recebido:', { nome, cpf: cpfLimpo, email, telefone, endereco });
+    console.log('📮 CEP recebido:', endereco?.zipCode);
+
     // Preparar metadata com informações do usuário
     const metadata = JSON.stringify({
       nome: nome,
