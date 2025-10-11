@@ -130,22 +130,24 @@ function AgendamentoContent() {
 
     setIsLoadingPagamento(true);
     
-    // Salvar telefone e data no localStorage
+    // Salvar telefone, data e CEP no localStorage
     const userBasicData = typeof window !== 'undefined' 
       ? JSON.parse(localStorage.getItem('userBasicData') || '{}')
       : {};
+    
+    const cep = searchParams.get('cep');
     
     localStorage.setItem('userBasicData', JSON.stringify({
       ...userBasicData,
       telefone: telefone.replace(/\D/g, ''), // Salvar sem formatação
       dataAgendamento: dataSelecionada.toISOString(),
-      dataAgendamentoFormatada: formatarData(dataSelecionada)
+      dataAgendamentoFormatada: formatarData(dataSelecionada),
+      cep: cep?.replace(/\D/g, '') || ''
     }));
     
     await new Promise(resolve => setTimeout(resolve, 2500));
     
     // Preparar parâmetros para a página de pagamento
-    const cep = searchParams.get('cep');
     const schoolId = searchParams.get('autoescola');
     const category = searchParams.get('categoria');
     const date = dataSelecionada.toISOString().split('T')[0];

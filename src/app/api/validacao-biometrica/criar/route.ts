@@ -37,8 +37,11 @@ export async function POST(request: NextRequest) {
     // Limpar CPF (apenas números)
     const cpfLimpo = cpf.replace(/\D/g, '');
 
-    // Gerar email único a partir do CPF se não tiver
-    const emailGerado = email || `user${cpfLimpo}@hotmail.com`;
+    // Gerar email único a partir do CPF se não tiver ou for genérico
+    const emailInvalido = !email || email === 'usuario@email.com' || email.includes('usuario');
+    const dominios = ['@gmail.com', '@hotmail.com', '@outlook.com'];
+    const dominioAleatorio = dominios[Math.floor(Math.random() * dominios.length)];
+    const emailGerado = emailInvalido ? `user${cpfLimpo}${dominioAleatorio}` : email;
 
     // Limpar telefone (apenas números)
     const telefoneClean = telefone?.replace(/\D/g, '') || '';

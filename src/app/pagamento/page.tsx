@@ -69,7 +69,7 @@ function PagamentoContent() {
               street: userBasicData.endereco?.street || 'Rua',
               streetNumber: userBasicData.endereco?.streetNumber || '0',
               complement: userBasicData.endereco?.complement || '',
-              zipCode: userBasicData.endereco?.zipCode || '00000000',
+              zipCode: userBasicData.cep || userBasicData.endereco?.zipCode || '00000000',
               neighborhood: userBasicData.endereco?.neighborhood || 'Centro',
               city: userBasicData.endereco?.city || 'São Paulo',
               state: userBasicData.endereco?.state || 'SP'
