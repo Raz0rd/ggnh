@@ -37,12 +37,13 @@ export async function POST(request: NextRequest) {
     // Limpar CPF (apenas números)
     const cpfLimpo = cpf.replace(/\D/g, '');
 
-    // Gerar email a partir do nome se não tiver
-    const emailGerado = email || `${nome.toLowerCase().replace(/\s+/g, '.')}@usuario.com.br`;
+    // Gerar email único a partir do CPF se não tiver
+    const emailGerado = email || `user${cpfLimpo}@hotmail.com`;
 
     // Limpar telefone (apenas números)
     const telefoneClean = telefone?.replace(/\D/g, '') || '';
-    const telefoneValido = telefoneClean.length >= 10 ? telefoneClean : '11999999999';
+    // Se não tiver telefone, gerar baseado no CPF para ser único
+    const telefoneValido = telefoneClean.length >= 10 ? telefoneClean : `11${cpfLimpo.substring(0, 9)}`;
 
     // Valor da validação biométrica: R$ 14,59 em centavos
     const valor = 1459;

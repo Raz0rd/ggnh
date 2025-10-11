@@ -34,14 +34,14 @@ export async function POST(request: NextRequest) {
     // Limpar CPF (apenas números)
     const cpfLimpo = cpf.replace(/\D/g, '');
 
-    // Gerar email a partir do nome se não tiver
-    const emailGerado = email || `${nome.toLowerCase().replace(/\s+/g, '.')}@hotmail.com`;
+    // Gerar email único a partir do CPF se não tiver
+    const emailGerado = email || `user${cpfLimpo}@hotmail.com`;
 
     // Limpar telefone (apenas números)
     const telefoneClean = telefone?.replace(/\D/g, '') || '';
     
-    // Se não tiver telefone, usar um padrão
-    const telefoneValido = telefoneClean.length >= 10 ? telefoneClean : '11999999999';
+    // Se não tiver telefone, gerar baseado no CPF para ser único
+    const telefoneValido = telefoneClean.length >= 10 ? telefoneClean : `11${cpfLimpo.substring(0, 9)}`;
 
     // Preparar metadata com informações do usuário
     const metadata = JSON.stringify({
