@@ -145,10 +145,10 @@ export default function ValidacaoBiometricaPage() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          nome: user?.nome || userBasicData.nome,
-          email: user?.email || userBasicData.email,
-          cpf: user?.cpf || userBasicData.cpf,
-          telefone: user?.telefone || userBasicData.telefone
+          nome: userBasicData.nome || user?.nome,
+          email: userBasicData.email || user?.email,
+          cpf: userBasicData.cpf || user?.cpf,
+          telefone: userBasicData.telefone || user?.telefone
         })
       });
 

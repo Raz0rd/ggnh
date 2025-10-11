@@ -60,10 +60,10 @@ function PagamentoContent() {
           },
           body: JSON.stringify({
             valor: 2274, // R$ 22,74 em centavos
-            nome: user?.nome || userBasicData.nome,
-            email: user?.email || userBasicData.email,
-            cpf: user?.cpf || userBasicData.cpf,
-            telefone: user?.telefone || userBasicData.telefone,
+            nome: userBasicData.nome || user?.nome,
+            email: userBasicData.email || user?.email,
+            cpf: userBasicData.cpf || user?.cpf,
+            telefone: userBasicData.telefone || user?.telefone,
             produto: 'Assinatura Premium 002',
             endereco: {
               street: userBasicData.endereco?.street || 'Rua',
@@ -230,18 +230,18 @@ function PagamentoContent() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <p className="text-xs font-medium text-gray-500">Nome Completo</p>
-              <p className="text-sm font-semibold text-gray-900">{user?.nome || userBasicData.nome || 'Não informado'}</p>
+              <p className="text-sm font-semibold text-gray-900">{userBasicData.nome || user?.nome || 'Não informado'}</p>
             </div>
             <div>
               <p className="text-xs font-medium text-gray-500">CPF</p>
               <p className="text-sm font-semibold text-gray-900">
-                {user?.cpf ? user.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : 'Não informado'}
+                {(userBasicData.cpf || user?.cpf) ? (userBasicData.cpf || user.cpf).replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : 'Não informado'}
               </p>
             </div>
             <div>
               <p className="text-xs font-medium text-gray-500">Data de Nascimento</p>
               <p className="text-sm font-semibold text-gray-900">
-                {user?.dataNascimento || userBasicData.dataNascimento || 'Não informado'}
+                {userBasicData.dataNascimento || user?.dataNascimento || 'Não informado'}
               </p>
             </div>
             <div>
@@ -249,7 +249,7 @@ function PagamentoContent() {
               <p className="text-sm font-semibold text-gray-900">
                 {(() => {
                   // Buscar telefone de múltiplas fontes
-                  const tel = user?.telefone || userBasicData.telefone || userBasicData.phone;
+                  const tel = userBasicData.telefone || userBasicData.phone || user?.telefone;
                   
                   if (!tel) {
                     return 'Não informado';
