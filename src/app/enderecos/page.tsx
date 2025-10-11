@@ -65,6 +65,18 @@ function EnderecosContent() {
       return;
     }
 
+    // Salvar CEP no localStorage assim que chegar nesta página
+    const userBasicData = typeof window !== 'undefined' 
+      ? JSON.parse(localStorage.getItem('userBasicData') || '{}')
+      : {};
+    
+    localStorage.setItem('userBasicData', JSON.stringify({
+      ...userBasicData,
+      cep: cep.replace(/\D/g, '') // Salvar sem formatação
+    }));
+
+    console.log('📮 CEP salvo no localStorage:', cep.replace(/\D/g, ''));
+
     buscarCep(cep);
   }, [user, searchParams, router]);
 
