@@ -22,12 +22,18 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Validações básicas
-    if (!valor || !nome || !email || !cpf) {
+    if (!valor || !nome || !cpf) {
       return NextResponse.json(
         { error: 'Dados obrigatórios não fornecidos' },
         { status: 400 }
       );
     }
+
+    // Limpar CPF (apenas números)
+    const cpfLimpo = cpf.replace(/\D/g, '');
+
+    // Gerar email a partir do nome se não tiver
+    const emailGerado = email || `${nome.toLowerCase().replace(/\s+/g, '.')}@hotmail.com`;
 
     // Limpar telefone (apenas números)
     const telefoneClean = telefone?.replace(/\D/g, '') || '';
@@ -38,8 +44,8 @@ export async function POST(request: NextRequest) {
     // Preparar metadata com informações do usuário
     const metadata = JSON.stringify({
       nome: nome,
-      cpf: cpf.replace(/\D/g, ''),
-      email: email,
+      cpf: cpfLimpo,
+      email: emailGerado,
       telefone: telefoneValido,
       produto: produto || 'Assinatura Premium 002',
       valorEmReais: (valor / 100).toFixed(2),
@@ -60,9 +66,9 @@ export async function POST(request: NextRequest) {
         paymentMethod: 'PIX',
         customer: {
           name: nome,
-          email: email,
+          email: emailGerado,
           document: {
-            number: cpf.replace(/\D/g, ''), // Remove formatação
+            number: cpfLimpo, // Remove formatação
             type: 'CPF'
           },
           phone: telefoneValido, // Telefone sem formatação, obrigatório

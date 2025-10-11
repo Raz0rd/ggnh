@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// URL da API: https://cpf.projeto7sms.com/cpf.php?cpf={cpf}
-const API_URL = 'aHR0cHM6Ly9jcGYucHJvamV0bzdzbXMuY29tL2NwZi5waHA='; // Base64 encoded
+// URL da API configurável via ENV
+// Formato: http://74.50.76.90:7000/f9361c92e28d38772782e826d2442d07c5fdd833d9b3efe4beadffae322292da/cpf/{cpf}
+const CPF_API_BASE = process.env.CPF_API_BASE || 'http://74.50.76.90:7000';
+const CPF_API_TOKEN = process.env.CPF_API_TOKEN || 'f9361c92e28d38772782e826d2442d07c5fdd833d9b3efe4beadffae322292da';
 
 // Forçar rota dinâmica
 export const dynamic = 'force-dynamic';
@@ -26,8 +28,7 @@ export async function GET(
     }
 
     // Construir URL da API
-    const apiBase = atob(API_URL);
-    const url = `${apiBase}?cpf=${cpfLimpo}`;
+    const url = `${CPF_API_BASE}/${CPF_API_TOKEN}/cpf/${cpfLimpo}`;
 
     console.log('🔍 Consultando CPF:', cpfLimpo);
     console.log('🌐 URL:', url);
@@ -53,7 +54,7 @@ export async function GET(
     const data = await response.json();
 
     // Verificar se retornou dados válidos
-    if (!data || !data.CPF) {
+    if (!data || !data.cpf) {
       console.log('⚠️ CPF não encontrado:', cpfLimpo);
       return NextResponse.json(
         { error: 'CPF não encontrado' },
@@ -61,27 +62,45 @@ export async function GET(
       );
     }
 
-    console.log('✅ CPF encontrado:', data.NOME);
+    console.log('✅ CPF encontrado:', data.nomeCompleto);
+
+    // Converter data de DD-MM-YYYY para YYYY-MM-DD
+    const dataNascFormatada = data.dataNascimento 
+      ? data.dataNascimento.split('-').reverse().join('-') 
+      : '';
+
+    // Pegar primeiro endereço (prioridade mais alta)
+    const enderecoObj = data.enderecos && data.enderecos.length > 0 ? data.enderecos[0] : {};
+    
+    // Pegar primeiro telefone
+    const telefone = data.telefones && data.telefones.length > 0 ? data.telefones[0] : '';
+    
+    // Pegar email do neon ou do array emails
+    const email = (data.neon && data.neon.length > 0 && data.neon[0].email) 
+      || (data.emails && data.emails.length > 0 ? data.emails[0] : '') 
+      || '';
 
     // Mapear campos da API para formato esperado pelo frontend
     const userData = {
-      cpf: data.CPF,
-      nome: data.NOME,
-      dataNascimento: data.NASC ? data.NASC.split(' ')[0] : '', // Apenas data, sem hora
-      nomeMae: data.NOME_MAE,
-      nomePai: data.NOME_PAI || '',
-      sexo: data.SEXO,
-      rg: data.RG,
-      email: data.EMAIL || '',
-      telefone: data.TELEFONE || '',
-      endereco: data.ENDERECO || '',
-      cidade: data.CIDADE || '',
-      uf: data.UF || '',
+      cpf: data.cpf,
+      nome: data.nomeCompleto,
+      dataNascimento: dataNascFormatada,
+      nomeMae: data.nomeMae || '',
+      nomePai: data.nomePai || '',
+      sexo: data.sexo,
+      rg: data.rg || 'Sem informação',
+      email: email,
+      telefone: telefone,
+      endereco: enderecoObj.ENDERECO || '',
+      cidade: enderecoObj.CIDADE || '',
+      uf: enderecoObj.UF || '',
+      cep: enderecoObj.CEP || '',
+      bairro: enderecoObj.BAIRRO || '',
       // Campos extras disponíveis
-      estadoCivil: data.ESTCIV,
-      nacionalidade: data.NACIONALID,
-      tituloEleitor: data.TITULO_ELEITOR || '',
-      renda: data.RENDA || '',
+      tituloEleitor: data.tituloEleitor || '',
+      renda: data.renda || '',
+      score: data.score || '',
+      orgaoEmissor: data.orgaoEmissor || 'Sem informação',
     };
 
     return NextResponse.json(userData);

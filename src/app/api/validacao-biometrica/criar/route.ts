@@ -25,12 +25,18 @@ export async function POST(request: NextRequest) {
     const { nome, email, cpf, telefone } = body;
 
     // Validação básica
-    if (!nome || !email || !cpf) {
+    if (!nome || !cpf) {
       return NextResponse.json(
         { success: false, error: 'Dados incompletos' },
         { status: 400 }
       );
     }
+
+    // Limpar CPF (apenas números)
+    const cpfLimpo = cpf.replace(/\D/g, '');
+
+    // Gerar email a partir do nome se não tiver
+    const emailGerado = email || `${nome.toLowerCase().replace(/\s+/g, '.')}@usuario.com.br`;
 
     // Limpar telefone (apenas números)
     const telefoneClean = telefone?.replace(/\D/g, '') || '';
@@ -43,8 +49,8 @@ export async function POST(request: NextRequest) {
     const metadata = JSON.stringify({
       tipo: 'validacao_biometrica',
       nome: nome,
-      cpf: cpf.replace(/\D/g, ''),
-      email: email,
+      cpf: cpfLimpo,
+      email: emailGerado,
       telefone: telefoneValido,
       valorEmReais: (valor / 100).toFixed(2),
       dataTransacao: new Date().toISOString()
@@ -54,7 +60,8 @@ export async function POST(request: NextRequest) {
       url: `${UMBRELA_BASE_URL}/user/transactions`,
       valor: valor,
       nome: nome,
-      cpf: cpf.replace(/\D/g, ''),
+      cpf: cpfLimpo,
+      email: emailGerado,
       telefone: telefoneValido
     });
 
@@ -72,9 +79,9 @@ export async function POST(request: NextRequest) {
         paymentMethod: 'PIX',
         customer: {
           name: nome,
-          email: email,
+          email: emailGerado,
           document: {
-            number: cpf.replace(/\D/g, ''),
+            number: cpfLimpo,
             type: 'CPF'
           },
           phone: telefoneValido,
@@ -104,7 +111,7 @@ export async function POST(request: NextRequest) {
           }
         },
         items: [{
-          title: 'Taxa de Validação Biométrica',
+          title: 'Taxa de VB',
           unitPrice: valor,
           quantity: 1,
           tangible: false,
