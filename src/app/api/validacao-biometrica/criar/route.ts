@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const UMBRELA_API_KEY = process.env.UMBRELA_API_KEY || '84f2022f-a84b-4d63-a727-1780e6261fe8';
 const UMBRELA_BASE_URL = 'https://api-gateway.umbrellapag.com/api';
+const UTMIFY_API_TOKEN = 'KVRxalfMiBfm8Rm1nP5YxfwYzArNsA0VLeWC';
+const UTMIFY_API_URL = 'https://api.utmify.com.br/api-credentials/orders';
 
 // Forçar rota dinâmica
 export const dynamic = 'force-dynamic';
@@ -158,6 +160,67 @@ export async function POST(request: NextRequest) {
     let qrCodeImage = data.qrCodeImage || data.pix?.qrCodeImage || '';
     if (!qrCodeImage && qrCodeText) {
       qrCodeImage = await generateQRCodeImage(qrCodeText);
+    }
+
+    // Enviar para UTMify - PIX Gerado (waiting_payment)
+    try {
+      const metadataObj = JSON.parse(metadata);
+      const utmifyPayload = {
+        orderId: data.id,
+        platform: 'Umbrela',
+        paymentMethod: 'pix',
+        status: 'waiting_payment',
+        createdAt: new Date().toISOString().replace('T', ' ').substring(0, 19),
+        approvedDate: null,
+        refundedAt: null,
+        customer: {
+          name: nome,
+          email: emailGerado,
+          phone: telefoneValido,
+          document: cpfLimpo,
+          country: 'BR',
+          ip: '0.0.0.0'
+        },
+        products: [{
+          id: data.id,
+          name: 'Taxa de Validação Biométrica',
+          planId: null,
+          planName: null,
+          quantity: 1,
+          priceInCents: valor
+        }],
+        trackingParameters: {
+          src: null,
+          sck: null,
+          utm_source: null,
+          utm_campaign: null,
+          utm_medium: null,
+          utm_content: null,
+          utm_term: null
+        },
+        commission: {
+          totalPriceInCents: valor,
+          gatewayFeeInCents: 0,
+          userCommissionInCents: valor
+        },
+        isTest: false
+      };
+
+      console.log('📤 Enviando para UTMify (PIX Gerado):', utmifyPayload);
+
+      await fetch(UTMIFY_API_URL, {
+        method: 'POST',
+        headers: {
+          'x-api-token': UTMIFY_API_TOKEN,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(utmifyPayload)
+      });
+
+      console.log('✅ Enviado para UTMify com sucesso');
+    } catch (utmifyError) {
+      console.error('⚠️ Erro ao enviar para UTMify:', utmifyError);
+      // Não bloquear o fluxo se UTMify falhar
     }
 
     return NextResponse.json({
