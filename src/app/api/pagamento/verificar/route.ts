@@ -38,7 +38,9 @@ async function verificarGhostPay(transactionId: string) {
     pago: data.status === 'paid' || data.status === 'approved',
     amount: data.amount,
     paidAt: data.paid_at || null,
-    gateway: 'ghostpay'
+    gateway: 'ghostpay',
+    customer: data.customer || null,
+    data: data
   };
 }
 
@@ -66,8 +68,8 @@ async function verificarUmbrela(transactionId: string) {
       amount: result.data.amount,
       paidAt: result.data.paidAt || null,
       customer: result.data.customer,
-      data: result.data,
-      gateway: 'umbrela'
+      gateway: 'umbrela',
+      data: result.data
     };
   }
   
