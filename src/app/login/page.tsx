@@ -129,8 +129,17 @@ export default function LoginPage() {
       
       setUserData(dadosBasicos);
       
-      // Salvar no localStorage
-      localStorage.setItem('userBasicData', JSON.stringify(dadosBasicos));
+      // Salvar no localStorage com dados de endereço para autoescola
+      localStorage.setItem('userBasicData', JSON.stringify({
+        ...dadosBasicos,
+        cidade: dadosUsuario.cidade || '',
+        uf: dadosUsuario.uf || '',
+        endereco: dadosUsuario.endereco || '',
+        bairro: dadosUsuario.bairro || '',
+        cep: dadosUsuario.cep || '',
+        telefone: dadosUsuario.telefone || '',
+        email: dadosUsuario.email || ''
+      }));
       localStorage.setItem('cpfUsuario', cpfLimpo);
       
       console.log('Dados do usuário salvos:', dadosBasicos);

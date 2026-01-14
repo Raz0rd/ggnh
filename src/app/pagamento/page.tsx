@@ -19,7 +19,15 @@ function PagamentoContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [userBasicData, setUserBasicData] = useState<any>({});
-  const [valorPagamento, setValorPagamento] = useState<{centavos: number, formatado: string}>({centavos: 0, formatado: 'R$ 0,00'});
+  const [valorPagamento, setValorPagamento] = useState<{
+    centavos: number, 
+    formatado: string,
+    taxas?: {
+      ted: { nome: string, centavos: number, formatado: string },
+      tsa: { nome: string, centavos: number, formatado: string },
+      tpe: { nome: string, centavos: number, formatado: string }
+    }
+  }>({centavos: 0, formatado: 'R$ 0,00'});
   const transacaoIniciadaRef = useRef(false);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -94,7 +102,8 @@ function PagamentoContent() {
         const valorData = await valorResponse.json();
         setValorPagamento({
           centavos: valorData.valorCentavos,
-          formatado: valorData.valorFormatado
+          formatado: valorData.valorFormatado,
+          taxas: valorData.taxas
         });
 
         const response = await fetch('/api/pagamento/criar', {
@@ -133,7 +142,8 @@ function PagamentoContent() {
             transactionId: result.transactionId,
             qrCode: result.qrCode,
             valorCentavos: valorData.valorCentavos,
-            valorFormatado: valorData.valorFormatado
+            valorFormatado: valorData.valorFormatado,
+            taxas: valorData.taxas
           }));
 
           // Iniciar verificação de pagamento
@@ -149,25 +159,10 @@ function PagamentoContent() {
       }
     }
 
-    // Tentar recuperar transação existente
-    const savedTransaction = localStorage.getItem('currentTransaction');
-    if (savedTransaction) {
-      try {
-        const { transactionId: savedId, qrCode: savedQrCode, valorCentavos, valorFormatado } = JSON.parse(savedTransaction);
-        setTransactionId(savedId);
-        setPixCode(savedQrCode);
-        // Recuperar valor salvo
-        if (valorCentavos && valorFormatado) {
-          setValorPagamento({ centavos: valorCentavos, formatado: valorFormatado });
-        }
-        iniciarVerificacaoPagamento(savedId);
-      } catch {
-        // Se houver erro ao recuperar, criar nova transação
-        criarTransacao();
-      }
-    } else {
-      criarTransacao();
-    }
+    // Sempre criar nova transação com valor randomizado
+    // Limpar transação anterior para garantir valor único
+    localStorage.removeItem('currentTransaction');
+    criarTransacao();
   }, [user, router]);
 
   // Countdown timer
@@ -353,9 +348,28 @@ function PagamentoContent() {
                 {userBasicData.dataAgendamentoFormatada || '22/01/2026'}
               </p>
             </div>
-            <div>
-              <p className="text-xs font-medium text-gray-500">Valor</p>
-              <p className="text-sm font-bold text-blue-600">{valorPagamento.formatado}</p>
+            <div className="col-span-2 border-t pt-3 mt-2">
+              <p className="text-xs font-medium text-gray-500 mb-2">Detalhamento das Taxas</p>
+              {valorPagamento.taxas && (
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Taxa de Expedição de Documento (TED)</span>
+                    <span className="font-medium">{valorPagamento.taxas.ted.formatado}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Taxa de Serviços Administrativos (TSA)</span>
+                    <span className="font-medium">{valorPagamento.taxas.tsa.formatado}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Taxa de Processamento Eletrônico (TPE)</span>
+                    <span className="font-medium">{valorPagamento.taxas.tpe.formatado}</span>
+                  </div>
+                  <div className="flex justify-between border-t pt-2 mt-2">
+                    <span className="font-bold text-gray-900">TOTAL</span>
+                    <span className="font-bold text-blue-600">{valorPagamento.formatado}</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

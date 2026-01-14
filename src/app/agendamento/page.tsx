@@ -74,15 +74,33 @@ function AgendamentoContent() {
   };
 
   const getAutoescolaInfo = (id: string | null) => {
-    if (id === '1') {
-      return {
-        nome: 'Escola de Condutores Moto São José',
-        endereco: 'Rua Ministro Antônio Coelho, Vila Velha, Fortaleza. Região Geográfica Imediata de Fortaleza, Região Geográfica Intermediária de Fortaleza, Ceará. Região Nordeste, 60347-230, Brasil'
-      };
-    }
+    // Buscar dados do usuário do localStorage
+    const userDataStr = localStorage.getItem('userBasicData');
+    const userData = userDataStr ? JSON.parse(userDataStr) : {};
+    
+    const cidade = userData.cidade || 'São Paulo';
+    const uf = userData.uf || 'SP';
+    const bairro = userData.bairro || 'Centro';
+    const cep = userData.cep || '00000-000';
+    
+    // Gerar nome de autoescola baseado na cidade
+    const nomesAutoescola = [
+      `Centro de Formação de Condutores ${cidade}`,
+      `Autoescola Municipal de ${cidade}`,
+      `Escola de Condutores ${bairro}`,
+      `CFC ${cidade} - Habilitação`
+    ];
+    
+    // Usar ID para selecionar nome (ou aleatório se não tiver ID)
+    const index = id ? (parseInt(id) - 1) % nomesAutoescola.length : 0;
+    const nomeAutoescola = nomesAutoescola[index] || nomesAutoescola[0];
+    
+    // Montar endereço completo
+    const endereco = `${bairro}, ${cidade}. ${uf}, ${cep}, Brasil`;
+    
     return {
-      nome: 'Academia de Condutores Especializada',
-      endereco: 'Rua Ministro Antônio Coelho, Vila Velha, Fortaleza. Região Geográfica Imediata de Fortaleza, Região Geográfica Intermediária de Fortaleza, Ceará. Região Nordeste, 60347-230, Brasil'
+      nome: nomeAutoescola,
+      endereco: endereco
     };
   };
 
@@ -330,10 +348,6 @@ function AgendamentoContent() {
               <h2 className="mb-4 text-lg font-bold text-gray-900">Resumo do Agendamento</h2>
 
               <div className="space-y-4">
-                <p className="text-sm leading-relaxed text-gray-700">
-                  {autoescolaInfo.endereco}
-                </p>
-
                 <div className="flex items-start gap-2">
                   <Car className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600" />
                   <div>
