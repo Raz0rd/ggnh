@@ -2,9 +2,11 @@ import Image from 'next/image';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import CloakerGate from '@/components/CloakerGate';
 
 export default function Home() {
   return (
+    <CloakerGate>
     <div className="min-h-screen bg-white">
       <Header />
       
@@ -111,5 +113,6 @@ export default function Home() {
       
       <Footer />
     </div>
+    </CloakerGate>
   );
 }
