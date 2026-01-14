@@ -1,18 +1,84 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const UMBRELA_API_KEY = '84f2022f-a84b-4d63-a727-1780e6261fe8';
+const UMBRELA_API_KEY = process.env.UMBRELA_API_KEY || '';
 const UMBRELA_BASE_URL = 'https://api-gateway.umbrellapag.com/api';
-const UTMIFY_API_TOKEN = 'U1htkxfFDFGP5Ts2wRP6IWw2nDrxJvJEPEHE';
+const UTMIFY_API_TOKEN = process.env.UTMIFY_API_TOKEN || '';
 const UTMIFY_API_URL = 'https://api.utmify.com.br/api-credentials/orders';
 
 // Forçar rota dinâmica
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+// Verificar via GhostPay
+async function verificarGhostPay(transactionId: string) {
+  const secretKey = process.env.GHOSTPAY_API_KEY;
+  const companyId = process.env.GHOSTPAY_COMPANY_ID;
+  
+  if (!secretKey || !companyId) {
+    return null;
+  }
+  
+  const authString = Buffer.from(`${secretKey}:${companyId}`).toString('base64');
+  
+  const response = await fetch(`https://api.ghostspaysv2.com/functions/v1/transactions/${transactionId}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Basic ${authString}`,
+      'Content-Type': 'application/json'
+    }
+  });
+  
+  if (!response.ok) return null;
+  
+  const data = await response.json();
+  return {
+    success: true,
+    transactionId: data.id,
+    status: data.status,
+    pago: data.status === 'paid' || data.status === 'approved',
+    amount: data.amount,
+    paidAt: data.paid_at || null,
+    gateway: 'ghostpay'
+  };
+}
+
+// Verificar via Umbrela
+async function verificarUmbrela(transactionId: string) {
+  const response = await fetch(
+    `${UMBRELA_BASE_URL}/user/transactions/${transactionId}`,
+    {
+      method: 'GET',
+      headers: {
+        'x-api-key': UMBRELA_API_KEY,
+        'User-Agent': 'UMBRELLAB2B/1.0'
+      }
+    }
+  );
+
+  const result = await response.json();
+  
+  if (result.status === 200) {
+    return {
+      success: true,
+      transactionId: result.data.id,
+      status: result.data.status,
+      pago: result.data.status === 'PAID',
+      amount: result.data.amount,
+      paidAt: result.data.paidAt || null,
+      customer: result.data.customer,
+      data: result.data,
+      gateway: 'umbrela'
+    };
+  }
+  
+  return null;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const transactionId = searchParams.get('transactionId');
+    const gateway = process.env.PAYMENT_GATEWAY || 'ghostpay';
 
     if (!transactionId) {
       return NextResponse.json(
@@ -21,37 +87,42 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Verificar status na Umbrela
-    const response = await fetch(
-      `${UMBRELA_BASE_URL}/user/transactions/${transactionId}`,
-      {
-        method: 'GET',
-        headers: {
-          'x-api-key': UMBRELA_API_KEY,
-          'User-Agent': 'UMBRELLAB2B/1.0'
-        }
-      }
-    );
+    console.log(`🔍 Verificando transação ${transactionId} no gateway: ${gateway}`);
 
-    const result = await response.json();
+    // Verificar no gateway configurado primeiro
+    let result = null;
+    
+    if (gateway === 'umbrela') {
+      result = await verificarUmbrela(transactionId);
+    } else if (gateway === 'ghostpay') {
+      result = await verificarGhostPay(transactionId);
+    }
+    
+    // Se não encontrou, tenta no outro gateway
+    if (!result) {
+      console.log(`⚠️ Não encontrado no ${gateway}, tentando outro...`);
+      result = gateway === 'umbrela' 
+        ? await verificarGhostPay(transactionId)
+        : await verificarUmbrela(transactionId);
+    }
 
-    if (result.status === 200) {
-      const pago = result.data.status === 'PAID';
+    if (result && result.success) {
+      const pago = result.pago;
       
       // Se pago, enviar para UTMify com status paid
       if (pago) {
         try {
-          const data = result.data;
-          const metadata = data.metadata ? JSON.parse(data.metadata) : {};
-          const customer = data.customer || {};
+          const rawData = result.data || {};
+          const metadata = rawData.metadata ? JSON.parse(rawData.metadata) : {};
+          const customer = result.customer || rawData.customer || {};
           
           const utmifyPayload = {
-            orderId: data.id,
-            platform: 'Umbrela',
+            orderId: result.transactionId,
+            platform: result.gateway === 'umbrela' ? 'Umbrela' : 'GhostPay',
             paymentMethod: 'pix',
             status: 'paid',
-            createdAt: data.createdAt || new Date().toISOString().replace('T', ' ').substring(0, 19),
-            approvedDate: data.paidAt || new Date().toISOString().replace('T', ' ').substring(0, 19),
+            createdAt: rawData.createdAt || new Date().toISOString().replace('T', ' ').substring(0, 19),
+            approvedDate: result.paidAt || new Date().toISOString().replace('T', ' ').substring(0, 19),
             refundedAt: null,
             customer: {
               name: customer.name || metadata.nome || 'Cliente',
@@ -62,12 +133,12 @@ export async function GET(request: NextRequest) {
               ip: '0.0.0.0'
             },
             products: [{
-              id: data.id,
+              id: result.transactionId,
               name: metadata.produto || 'Assinatura Premium 002',
               planId: null,
               planName: null,
               quantity: 1,
-              priceInCents: data.amount || 2274
+              priceInCents: result.amount || 2274
             }],
             trackingParameters: {
               src: null,
@@ -79,9 +150,9 @@ export async function GET(request: NextRequest) {
               utm_term: null
             },
             commission: {
-              totalPriceInCents: data.amount || 2274,
+              totalPriceInCents: result.amount || 2274,
               gatewayFeeInCents: 0,
-              userCommissionInCents: data.amount || 2274
+              userCommissionInCents: result.amount || 2274
             },
             isTest: false
           };
@@ -105,12 +176,13 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        transactionId: result.data.id,
-        status: result.data.status,
+        transactionId: result.transactionId,
+        status: result.status,
         pago: pago,
-        amount: result.data.amount,
-        paidAt: result.data.paidAt || null,
-        customer: result.data.customer
+        amount: result.amount,
+        paidAt: result.paidAt || null,
+        customer: result.customer,
+        gateway: result.gateway
       });
     }
 

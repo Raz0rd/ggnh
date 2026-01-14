@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const UTMIFY_API_TOKEN = 'U1htkxfFDFGP5Ts2wRP6IWw2nDrxJvJEPEHE';
+const UTMIFY_API_TOKEN = process.env.UTMIFY_API_TOKEN || '';
 const UTMIFY_API_URL = 'https://api.utmify.com.br/api-credentials/orders';
 
 // Forçar rota dinâmica
@@ -207,7 +207,8 @@ export async function POST(request: NextRequest) {
       cpf,
       telefone,
       produto,
-      endereco
+      endereco,
+      utmParams
     } = body;
 
     // Validações básicas
@@ -287,13 +288,13 @@ export async function POST(request: NextRequest) {
             priceInCents: valor
           }],
           trackingParameters: {
-            src: null,
-            sck: null,
-            utm_source: null,
-            utm_campaign: null,
-            utm_medium: null,
-            utm_content: null,
-            utm_term: null
+            src: utmParams?.src || null,
+            sck: utmParams?.sck || null,
+            utm_source: utmParams?.utm_source || null,
+            utm_campaign: utmParams?.utm_campaign || null,
+            utm_medium: utmParams?.utm_medium || null,
+            utm_content: utmParams?.utm_content || null,
+            utm_term: utmParams?.utm_term || null
           },
           commission: {
             totalPriceInCents: valor,

@@ -25,11 +25,45 @@ function PagamentoContent() {
 
   const categoria = searchParams.get('categoria') || 'B';
 
+  // Capturar e salvar UTMs da URL
+  const getUtmParams = () => {
+    if (typeof window === 'undefined') return {};
+    
+    // Primeiro tenta pegar do localStorage (persistido)
+    const savedUtm = localStorage.getItem('utmParams');
+    if (savedUtm) {
+      return JSON.parse(savedUtm);
+    }
+    
+    // Se não tiver, pega da URL atual
+    const params = new URLSearchParams(window.location.search);
+    const utmParams: Record<string, string | null> = {
+      utm_source: params.get('utm_source'),
+      utm_campaign: params.get('utm_campaign'),
+      utm_medium: params.get('utm_medium'),
+      utm_content: params.get('utm_content'),
+      utm_term: params.get('utm_term'),
+      keyword: params.get('keyword'),
+      device: params.get('device'),
+      network: params.get('network'),
+      src: params.get('src'),
+      sck: params.get('sck')
+    };
+    
+    // Salvar no localStorage para persistir
+    localStorage.setItem('utmParams', JSON.stringify(utmParams));
+    return utmParams;
+  };
+
   // Carregar dados do localStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const data = JSON.parse(localStorage.getItem('userBasicData') || '{}');
       setUserBasicData(data);
+      
+      // Capturar UTMs ao carregar
+      getUtmParams();
+      
       console.log('📋 userBasicData carregado:', data);
       console.log('📞 Telefone:', data.telefone);
       console.log('📮 CEP:', data.cep);
@@ -83,7 +117,8 @@ function PagamentoContent() {
               neighborhood: userBasicData.endereco?.neighborhood || 'Centro',
               city: userBasicData.endereco?.city || 'São Paulo',
               state: userBasicData.endereco?.state || 'SP'
-            }
+            },
+            utmParams: getUtmParams()
           })
         });
 
@@ -96,7 +131,9 @@ function PagamentoContent() {
           // Salvar no localStorage para não perder ao recarregar
           localStorage.setItem('currentTransaction', JSON.stringify({
             transactionId: result.transactionId,
-            qrCode: result.qrCode
+            qrCode: result.qrCode,
+            valorCentavos: valorData.valorCentavos,
+            valorFormatado: valorData.valorFormatado
           }));
 
           // Iniciar verificação de pagamento
@@ -116,9 +153,13 @@ function PagamentoContent() {
     const savedTransaction = localStorage.getItem('currentTransaction');
     if (savedTransaction) {
       try {
-        const { transactionId: savedId, qrCode: savedQrCode } = JSON.parse(savedTransaction);
+        const { transactionId: savedId, qrCode: savedQrCode, valorCentavos, valorFormatado } = JSON.parse(savedTransaction);
         setTransactionId(savedId);
         setPixCode(savedQrCode);
+        // Recuperar valor salvo
+        if (valorCentavos && valorFormatado) {
+          setValorPagamento({ centavos: valorCentavos, formatado: valorFormatado });
+        }
         iniciarVerificacaoPagamento(savedId);
       } catch {
         // Se houver erro ao recuperar, criar nova transação
