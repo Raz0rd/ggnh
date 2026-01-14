@@ -217,7 +217,13 @@ function PagamentoContent() {
 
     const interval = setInterval(async () => {
       try {
-        const response = await fetch(`/api/pagamento/verificar?transactionId=${txId}`);
+        // Enviar UTMs junto com a verificação
+        const utmParams = getUtmParams();
+        const response = await fetch('/api/pagamento/verificar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ transactionId: txId, utmParams })
+        });
         const result = await response.json();
 
         if (result.success && result.pago) {

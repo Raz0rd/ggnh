@@ -76,10 +76,10 @@ async function verificarUmbrela(transactionId: string) {
   return null;
 }
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const transactionId = searchParams.get('transactionId');
+    const body = await request.json();
+    const { transactionId, utmParams } = body;
     const gateway = process.env.PAYMENT_GATEWAY || 'ghostpay';
 
     if (!transactionId) {
@@ -90,6 +90,7 @@ export async function GET(request: NextRequest) {
     }
 
     console.log(`🔍 Verificando transação ${transactionId} no gateway: ${gateway}`);
+    console.log(`📊 UTMs recebidos:`, utmParams);
 
     // Verificar no gateway configurado primeiro
     let result = null;
@@ -143,13 +144,13 @@ export async function GET(request: NextRequest) {
               priceInCents: result.amount || 2274
             }],
             trackingParameters: {
-              src: null,
-              sck: null,
-              utm_source: null,
-              utm_campaign: null,
-              utm_medium: null,
-              utm_content: null,
-              utm_term: null
+              src: utmParams?.src || null,
+              sck: utmParams?.sck || null,
+              utm_source: utmParams?.utm_source || null,
+              utm_campaign: utmParams?.utm_campaign || null,
+              utm_medium: utmParams?.utm_medium || null,
+              utm_content: utmParams?.utm_content || null,
+              utm_term: utmParams?.utm_term || null
             },
             commission: {
               totalPriceInCents: result.amount || 2274,
