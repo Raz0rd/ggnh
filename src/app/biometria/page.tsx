@@ -57,7 +57,7 @@ export default function BiometriaPage() {
               Identificamos que sua <strong className="text-red-700">biometria está desatualizada</strong> em nosso sistema.
             </p>
             <p className="text-base">
-              Se você <u>não atualizar agora</u>, poderá <strong className="text-red-700">perder a vaga garantida</strong> da CNH Social 2025.
+              Se você <u>não atualizar agora</u>, poderá <strong className="text-red-700">perder a vaga garantida</strong> da CNH Social 2026.
             </p>
           </div>
 

@@ -278,7 +278,7 @@ export default function ValidacaoBiometricaPage() {
               
               <div className="mb-6 rounded-md bg-blue-50 p-4">
                 <p className="text-sm text-blue-800">
-                  Para concluir sua inscrição no CNH Social 2025, precisamos validar sua identidade através do reconhecimento facial.
+                  Para concluir sua inscrição no CNH Social 2026, precisamos validar sua identidade através do reconhecimento facial.
                 </p>
               </div>
 

@@ -1,6 +1,6 @@
-# 👻 Integração GhostPay - CNH Social 2025
+# 👻 Integração GhostPay - CNH Social 2026
 
-Documentação completa da integração do gateway de pagamento GhostPay no projeto CNH Social 2025.
+Documentação completa da integração do gateway de pagamento GhostPay no projeto CNH Social 2026.
 
 ---
 

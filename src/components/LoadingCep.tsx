@@ -47,7 +47,7 @@ export default function LoadingCep({ onComplete }: LoadingCepProps) {
         {/* Conteúdo Central */}
         <div className="text-center">
           {/* Título */}
-          <h1 className="mb-3 text-4xl font-bold text-white">CNH Social 2025</h1>
+          <h1 className="mb-3 text-4xl font-bold text-white">CNH Social 2026</h1>
           <p className="mb-12 text-lg text-blue-200">
             Conectando brasileiros à mobilidade e autonomia
           </p>

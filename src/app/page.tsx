@@ -13,13 +13,13 @@ export default function Home() {
         <section className="bg-blue py-12 text-white md:py-16">
           <div className="container mx-auto px-4 text-center">
             <h1 className="mb-4 text-2xl font-bold leading-tight md:mb-6 md:text-4xl lg:text-5xl">
-              CNH Social 2025: Conquiste sua liberdade e independência
+              CNH Social 2026: Conquiste sua liberdade e independência
             </h1>
             <p className="mx-auto mb-6 max-w-4xl text-lg md:mb-8 md:text-xl lg:text-2xl">
               Mais de 150.000 vagas para CNH gratuita em todo o Brasil
             </p>
             <p className="mx-auto mb-8 max-w-3xl text-base md:mb-10 md:text-lg">
-              O maior programa de CNH Social do Brasil já está com inscrições abertas e beneficiará milhões de brasileiros garantindo mobilidade e oportunidades em 2025.
+              O maior programa de CNH Social do Brasil já está com inscrições abertas e beneficiará milhões de brasileiros garantindo mobilidade e oportunidades em 2026.
             </p>
             <Link
               href="/login"
@@ -35,7 +35,7 @@ export default function Home() {
           <Link href="/login">
             <Image
               src="/banner-promocional-1.png"
-              alt="CNH Social 2025 - Conquiste sua liberdade e independência"
+              alt="CNH Social 2026 - Conquiste sua liberdade e independência"
               width={1920}
               height={400}
               className="h-auto w-full"
@@ -82,7 +82,7 @@ export default function Home() {
         <div className="w-full">
           <Image
             src="/banner-promocional-2.png"
-            alt="CNH Social 2025 - Você no caminho da sua habilitação"
+            alt="CNH Social 2026 - Você no caminho da sua habilitação"
             width={1920}
             height={400}
             className="h-auto w-full"

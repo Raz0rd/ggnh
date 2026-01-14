@@ -1,4 +1,4 @@
-# ✅ Checklist Pré-Deploy - CNH Social 2025
+# ✅ Checklist Pré-Deploy - CNH Social 2026
 
 ## 🔍 Verificações Obrigatórias
 

@@ -1,6 +1,6 @@
 # ⚡ Configuração Rápida - GhostPay
 
-Guia rápido para configurar o gateway GhostPay no projeto CNH Social 2025.
+Guia rápido para configurar o gateway GhostPay no projeto CNH Social 2026.
 
 ---
 

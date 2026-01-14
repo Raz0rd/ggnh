@@ -19,6 +19,7 @@ function PagamentoContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [userBasicData, setUserBasicData] = useState<any>({});
+  const [valorPagamento, setValorPagamento] = useState<{centavos: number, formatado: string}>({centavos: 0, formatado: 'R$ 0,00'});
   const transacaoIniciadaRef = useRef(false);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -54,13 +55,21 @@ function PagamentoContent() {
       setError('');
 
       try {
+        // Buscar valor aleatório da API
+        const valorResponse = await fetch('/api/valor');
+        const valorData = await valorResponse.json();
+        setValorPagamento({
+          centavos: valorData.valorCentavos,
+          formatado: valorData.valorFormatado
+        });
+
         const response = await fetch('/api/pagamento/criar', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            valor: 2274, // R$ 22,74 em centavos
+            valor: valorData.valorCentavos,
             nome: userBasicData.nome || user?.nome,
             email: userBasicData.email || user?.email,
             cpf: userBasicData.cpf || user?.cpf,
@@ -294,12 +303,12 @@ function PagamentoContent() {
             <div>
               <p className="text-xs font-medium text-gray-500">Data Prevista de Início</p>
               <p className="text-sm font-semibold text-gray-900">
-                {userBasicData.dataAgendamentoFormatada || '22/10/2025'}
+                {userBasicData.dataAgendamentoFormatada || '22/01/2026'}
               </p>
             </div>
             <div>
               <p className="text-xs font-medium text-gray-500">Valor</p>
-              <p className="text-sm font-bold text-blue-600">R$ 22,74</p>
+              <p className="text-sm font-bold text-blue-600">{valorPagamento.formatado}</p>
             </div>
           </div>
         </div>
@@ -310,7 +319,7 @@ function PagamentoContent() {
             Pagamento via PIX
           </h2>
           
-          <p className="mb-6 text-center text-4xl font-bold text-blue-600">R$ 22,74</p>
+          <p className="mb-6 text-center text-4xl font-bold text-blue-600">{valorPagamento.formatado}</p>
 
           {/* Loading */}
           {loading && (

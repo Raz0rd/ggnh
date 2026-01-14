@@ -39,7 +39,7 @@ const nextConfig = {
 
   // Variáveis de ambiente públicas
   env: {
-    NEXT_PUBLIC_APP_NAME: 'CNH Social 2025',
+    NEXT_PUBLIC_APP_NAME: 'CNH Social 2026',
   },
 };
 

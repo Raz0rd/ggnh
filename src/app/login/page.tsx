@@ -314,7 +314,7 @@ export default function LoginPage() {
                       Selecione seu nome completo:
                     </label>
                     <div className="space-y-2">
-                      {opcoesNome.map((nome, index) => (
+                      {opcoesNome.map((nome: string, index: number) => (
                         <button
                           key={index}
                           type="button"

@@ -59,7 +59,7 @@ export default function SucessoPage() {
     doc.text('COMPROVANTE DE INSCRIÇÃO', 105, 18, { align: 'center' });
     
     doc.setFontSize(16);
-    doc.text('CNH Social 2025', 105, 30, { align: 'center' });
+    doc.text('CNH Social 2026', 105, 30, { align: 'center' });
 
     // Protocolo
     doc.setFillColor(...azulGov);

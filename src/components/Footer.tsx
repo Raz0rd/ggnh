@@ -40,7 +40,7 @@ export default function Footer() {
           <div className="mb-3 flex justify-center md:mb-4">
             <Image src="/govbr-branco.png" alt="gov.br" width={120} height={40} className="h-6 w-auto md:h-8" />
           </div>
-          <p className="text-xs opacity-90 md:text-sm">© 2025 Governo Federal. Todos os direitos reservados.</p>
+          <p className="text-xs opacity-90 md:text-sm">© 2026 Governo Federal. Todos os direitos reservados.</p>
         </div>
       </div>
     </footer>

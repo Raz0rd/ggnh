@@ -74,7 +74,7 @@ export default function TermosPage() {
       <div className="w-full">
         <Image
           src="/banner-promocional-2.png"
-          alt="CNH Social 2025 - Você no caminho da sua habilitação"
+          alt="CNH Social 2026 - Você no caminho da sua habilitação"
           width={1920}
           height={400}
           className="h-auto w-full"
@@ -132,7 +132,7 @@ export default function TermosPage() {
           </h1>
           <p className="text-base text-gray-600 sm:text-lg">Programa CNH Social - DETRAN</p>
           <div className="mt-3 text-sm text-gray-500">
-            <span>Atualizado em 04/06/2025 11h48</span>
+            <span>Atualizado em 04/12/2025 11h48</span>
           </div>
         </div>
 

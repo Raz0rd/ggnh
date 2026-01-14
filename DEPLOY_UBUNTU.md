@@ -413,4 +413,4 @@ https://seu-dominio.com.br  # Se SSL configurado
 
 ## ✅ Deploy Concluído!
 
-Sua aplicação CNH Social 2025 está rodando em produção no Ubuntu! 🎉
+Sua aplicação CNH Social 2026 está rodando em produção no Ubuntu! 🎉

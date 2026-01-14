@@ -167,7 +167,7 @@ function AgendamentoContent() {
         {/* Título */}
         <div className="mb-8 border-l-4 border-blue-600 pl-4">
           <h1 className="mb-2 text-2xl font-bold text-gray-900">Agendamento de Início das Aulas</h1>
-          <p className="text-sm text-gray-600">CNH Social 2025 - Escolha a data de início do seu curso</p>
+          <p className="text-sm text-gray-600">CNH Social 2026 - Escolha a data de início do seu curso</p>
         </div>
 
         {/* Campo de Telefone */}

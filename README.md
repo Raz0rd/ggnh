@@ -1,6 +1,6 @@
-# CNH Social 2025 - Next.js
+# CNH Social 2026 - Next.js
 
-Aplicação web para o programa CNH Social 2025, desenvolvida com Next.js 14, TypeScript e Tailwind CSS.
+Aplicação web para o programa CNH Social 2026, desenvolvida com Next.js 14, TypeScript e Tailwind CSS.
 
 ## 🚀 Tecnologias
 

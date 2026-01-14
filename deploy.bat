@@ -1,6 +1,6 @@
 @echo off
 echo ========================================
-echo  Deploy CNH Social 2025 - Netlify
+echo  Deploy CNH Social 2026 - Netlify
 echo ========================================
 echo.
 
