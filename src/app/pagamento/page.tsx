@@ -229,6 +229,12 @@ function PagamentoContent() {
           
           setPagamentoConfirmado(true);
           
+          // Enviar conversão para Google Ads (com proteção contra duplicação)
+          if (typeof window !== 'undefined' && (window as any).gtag_report_conversion) {
+            const valorReais = valorPagamento.centavos / 100;
+            (window as any).gtag_report_conversion(txId, valorReais);
+          }
+          
           // Limpar localStorage
           localStorage.removeItem('currentTransaction');
           

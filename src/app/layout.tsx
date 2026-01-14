@@ -31,6 +31,28 @@ export default function RootLayout({
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
             gtag('config', 'AW-17859172217');
+            
+            // Função de conversão do Google Ads (chamada quando pagamento confirmado)
+            window.gtag_report_conversion = function(transactionId, value) {
+              // Verificar se já foi enviada essa conversão
+              var sentKey = 'conversion_sent_' + transactionId;
+              if (localStorage.getItem(sentKey)) {
+                console.log('Conversão já enviada para:', transactionId);
+                return false;
+              }
+              
+              gtag('event', 'conversion', {
+                'send_to': 'AW-17859172217/AxgvCOr_194bEPmu9cNC',
+                'value': value || 1.0,
+                'currency': 'BRL',
+                'transaction_id': transactionId
+              });
+              
+              // Marcar como enviada
+              localStorage.setItem(sentKey, 'true');
+              console.log('Conversão enviada para Google Ads:', transactionId);
+              return true;
+            };
           `}
         </Script>
       </head>
